@@ -3,8 +3,8 @@ from rest_framework import routers
 from .views import TipoServicioViewSet, ServicioViewSet, EstacionServicioViewSet
 
 router = routers.DefaultRouter()
-router.register(r'tipos-servicio', TipoServicioViewSet)
 router.register(r'', ServicioViewSet)
+router.register(r'tipos-servicio', TipoServicioViewSet)
 router.register(r'estacion-servicios', EstacionServicioViewSet)
 
 urlpatterns = [
