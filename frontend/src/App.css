@@ -1,42 +1,137 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
+/* SIDEBAR */
+
+.sidebar {
+  background-color: #0F172A !important;
+}
+
+.nav-pills .nav-link {
+  color: gray !important;
+}
+
+.nav-pills .nav-link.active {
+  background-color: #0d6efd !important;
+  color: white !important;
+}
+
+.nav-pills .nav-link:hover {
+  background-color: #0d6efd !important;
+  color: white !important;
+}
+
+.icon {
+    fill: currentColor;
+    stroke: currentColor;
+}
+
+.icon:hover {
+    fill: currentColor;
+    stroke: currentColor;
+}
+
+.logout {
+    color: white;
+}
+
+.logout:hover {
+    color: red;
+}
+
+/* APP-LAYOUT*/
+
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.sidebar-container {
+  width: 350px;
+  position: fixed;
+  height: 100vh;
+}
+
+.main-content {
+  margin-left: 350px;
+  flex: 1;
   padding: 2rem;
-  text-align: center;
+  background-color: #f8f9fa;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+/* MAINCARD */
+
+.main-card {
+  background-color: #F6F6F6;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 4rem;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.main-card-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
+.main-card-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #162047;
 }
 
-.card {
-  padding: 2em;
+.circle-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.read-the-docs {
-  color: #888;
+.circle-icon svg {
+    color: white;  /* color del SVG */
+}
+
+.main-card .title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1c274c;
+}
+
+.main-card .text {
+  font-size: 1rem;
+  color: #333;
+  flex-grow: 1;
+}
+
+.main-card button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 0.375rem;
+  color: white;
+  cursor: pointer;
+  font-weight: 500;
+  width: 7rem;
+
+}
+
+.main-card button:hover {
+  background-color: #0F172A;
+}
+
+/* BOMBAVIEW */
+.bomba-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.delete-icon:hover {
+    transform: scale(1.1);
+    transition: transform 0.2s;
 }
