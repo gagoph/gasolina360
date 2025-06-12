@@ -23,18 +23,17 @@ export default function CrearBomba({ show, onHide }) {
 
     const validateForm = () => {
         const errors = {};
-        
-        // Validar RIF
-        if (!/^[JGVE]-\d{8}-\d$/.test(formData.rif)) {
-            errors.rif = 'RIF inválido. Use el formato J-12345678-9';
+
+        // Validar RIF: máximo 10 caracteres, empieza por J/G/V/E y 9 dígitos
+        if (!/^[JGVE]\d{9}$/.test(formData.rif) || formData.rif.length > 10) {
+            errors.rif = 'RIF inválido. Use el formato J123456789 (10 caracteres máximo)';
         }
 
-        // Validar telefono
-        if (!/^0[24][12]\d{2}-\d{7}$/.test(formData.telefono)) {
-            errors.telefono = 'Teléfono inválido. Use el formato 0XXX-1234567';
+        // Validar teléfono: solo números, 11 dígitos, empieza por 0
+        if (!/^0\d{10}$/.test(formData.telefono)) {
+            errors.telefono = 'Teléfono inválido. Use el formato 04121234567 (solo números)';
         }
 
-        // Validar cantidad de dispensadores
         if (parseInt(formData.cantidad_dispensadores) <= 0) {
             errors.cantidad_dispensadores = 'Debe ser un número positivo';
         }
@@ -58,9 +57,36 @@ export default function CrearBomba({ show, onHide }) {
             return;
         }
 
+        // Combina los horarios antes de enviar
+        const dataToSend = {
+            ...formData,
+            horario_operacion: `${formData.horario_apertura} - ${formData.horario_cierre}`,
+            id_encargado_registro: 1 // <-- ID fijo temporal
+        };
+        // Elimina los campos que no existen en el backend
+        delete dataToSend.horario_apertura;
+        delete dataToSend.horario_cierre;
+
         try {
-            // const response = await api.createBomba(formData);
-            console.log('Datos a enviar:', formData);
+            const response = await fetch('http://localhost:8000/api/estaciones/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataToSend)
+            });
+
+            if (!response.ok) {
+                // Intenta leer el error del backend
+                let errorMsg = 'Error al crear la bomba';
+                try {
+                    const errorData = await response.json();
+                    errorMsg = JSON.stringify(errorData);
+                } catch (e) {
+                    // Si no es JSON, ignora
+                }
+                throw new Error(errorMsg);
+            }
 
             setFormData({
                 rif: '',
@@ -79,7 +105,7 @@ export default function CrearBomba({ show, onHide }) {
 
         } catch (error) {
             console.error('Error al crear la bomba:', error);
-            alert('Error al crear la bomba. Por favor intente de nuevo.');
+            alert('Error al crear la bomba: ' + error.message);
         }
     };
 
@@ -98,11 +124,12 @@ export default function CrearBomba({ show, onHide }) {
                             name="rif"
                             value={formData.rif}
                             onChange={handleChange}
-                            placeholder="J-12345678-9"
-                            pattern="^[JGVE]-\d{8}-\d$"
+                            placeholder="J123456789"
+                            pattern="^[JGVE]\d{9}$"
+                            maxLength={10}
                         />
                         <Form.Control.Feedback type="invalid">
-                            Ingrese un RIF válido (formato: J-12345678-9)
+                            Ingrese un RIF válido (formato: J123456789, máximo 10 caracteres)
                         </Form.Control.Feedback>
                     </Form.Group>
 
@@ -145,11 +172,12 @@ export default function CrearBomba({ show, onHide }) {
                             name="telefono"
                             value={formData.telefono}
                             onChange={handleChange}
-                            placeholder="0XXX-1234567"
-                            pattern="^0[24][12]\d{2}-\d{7}$"
+                            placeholder="04121234567"
+                            pattern="^0\d{10}$"
+                            maxLength={11}
                         />
                         <Form.Control.Feedback type="invalid">
-                            Ingrese un teléfono válido (formato: 0XXX-1234567)
+                            Ingrese un teléfono válido (formato: 04121234567, solo números)
                         </Form.Control.Feedback>
                     </Form.Group>
 
@@ -193,16 +221,15 @@ export default function CrearBomba({ show, onHide }) {
                             Ingrese un número válido de dispensadores
                         </Form.Control.Feedback>
                     </Form.Group>
+
+                    <Button variant="secondary" onClick={onHide}>
+                        Cancelar
+                    </Button>
+                    <Button variant="primary" type="submit">
+                        Guardar
+                    </Button>
                 </Form>
             </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onHide}>
-                    Cancelar
-                </Button>
-                <Button variant="primary" onClick={handleSubmit}>
-                    Guardar
-                </Button>
-            </Modal.Footer>
         </Modal>
     );
 }

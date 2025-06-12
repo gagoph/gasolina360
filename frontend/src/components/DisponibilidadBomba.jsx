@@ -1,47 +1,72 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 
 export default function DisponibilidadBomba({ show, onHide, bombaData }) {
-    const [activa, setActiva] = useState(bombaData?.activa || false);
+    const [activa, setActiva] = useState(true);
 
-    const handleSubmit = async () => {
+    useEffect(() => {
+        if (bombaData) {
+            setActiva(!!bombaData.activa);
+        }
+    }, [bombaData, show]);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!bombaData) return;
+
         try {
-            // Aca va la llamada de la API
-            console.log('Nuevo estado:', activa);
-            console.log('ID de la bomba:', bombaData?.id);
-            
+            const response = await fetch(`http://localhost:8000/api/estaciones/${bombaData.id}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ activa })
+            });
+
+            if (!response.ok) {
+                let errorMsg = 'Error al actualizar disponibilidad';
+                try {
+                    const errorData = await response.json();
+                    errorMsg = JSON.stringify(errorData);
+                } catch (e) {}
+                throw new Error(errorMsg);
+            }
+
+            alert('Disponibilidad actualizada exitosamente!');
             onHide();
-            alert('Estado actualizado exitosamente!');
         } catch (error) {
-            console.error('Error al actualizar estado:', error);
-            alert('Error al actualizar el estado');
+            alert('Error al actualizar disponibilidad: ' + error.message);
         }
     };
 
     return (
-        <Modal show={show} onHide={onHide} size="sm">
+        <Modal show={show} onHide={onHide} centered>
             <Modal.Header closeButton>
-                <Modal.Title>Estado de la Bomba</Modal.Title>
+                <Modal.Title>Cambiar Disponibilidad</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <h5>{bombaData?.nombre}</h5>
-                <Form.Check
-                    type="switch"
-                    id="estado-switch"
-                    label={activa ? "Activa" : "Inactiva"}
-                    checked={activa}
-                    onChange={(e) => setActiva(e.target.checked)}
-                    className="mt-3"
-                />
+                {bombaData ? (
+                    <Form onSubmit={handleSubmit}>
+                        <Form.Group>
+                            <Form.Label>
+                                ¿La estación <strong>{bombaData.nombre}</strong> está activa?
+                            </Form.Label>
+                            <Form.Check
+                                type="switch"
+                                id="activa-switch"
+                                label={activa ? "Activa" : "Inactiva"}
+                                checked={activa}
+                                onChange={e => setActiva(e.target.checked)}
+                            />
+                        </Form.Group>
+                        <Button variant="primary" type="submit" className="mt-3">
+                            Guardar
+                        </Button>
+                    </Form>
+                ) : (
+                    <div>Seleccione una estación para cambiar disponibilidad.</div>
+                )}
             </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onHide}>
-                    Cancelar
-                </Button>
-                <Button variant="primary" onClick={handleSubmit}>
-                    Guardar
-                </Button>
-            </Modal.Footer>
         </Modal>
     );
 }

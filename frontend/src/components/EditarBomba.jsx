@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 
 export default function EditarBombaModal({ show, onHide, bombaData }) {
     const [validated, setValidated] = useState(false);
-    const [formData, setFormData] = useState(bombaData || {
+    const [formData, setFormData] = useState({
         rif: '',
         nombre: '',
         ubicacion: '',
@@ -12,6 +12,28 @@ export default function EditarBombaModal({ show, onHide, bombaData }) {
         horario_cierre: '',
         cantidad_dispensadores: ''
     });
+
+    useEffect(() => {
+        if (show && bombaData) {
+            // Extraer horario_apertura y horario_cierre del string horario_operacion
+            let horario_apertura = '';
+            let horario_cierre = '';
+            if (bombaData.horario_operacion) {
+                const partes = bombaData.horario_operacion.split(' - ');
+                horario_apertura = partes[0] || '';
+                horario_cierre = partes[1] || '';
+            }
+            setFormData({
+                rif: bombaData.rif || '',
+                nombre: bombaData.nombre || '',
+                ubicacion: bombaData.ubicacion || '',
+                telefono: bombaData.telefono || '',
+                horario_apertura,
+                horario_cierre,
+                cantidad_dispensadores: bombaData.cantidad_dispensadores || ''
+            });
+        }
+    }, [show, bombaData]);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -23,13 +45,15 @@ export default function EditarBombaModal({ show, onHide, bombaData }) {
 
     const validateForm = () => {
         const errors = {};
-        
-        if (!/^[JGVE]-\d{8}-\d$/.test(formData.rif)) {
-            errors.rif = 'RIF inválido. Use el formato J-12345678-9';
+
+        // Validar RIF: máximo 10 caracteres, empieza por J/G/V/E y 9 dígitos
+        if (!/^[JGVE]\d{9}$/.test(formData.rif) || formData.rif.length > 10) {
+            errors.rif = 'RIF inválido. Use el formato J123456789 (10 caracteres máximo)';
         }
 
-        if (!/^0[24][12]\d{2}-\d{7}$/.test(formData.telefono)) {
-            errors.telefono = 'Teléfono inválido. Use el formato 0XXX-1234567';
+        // Validar teléfono: solo números, 11 dígitos, empieza por 0
+        if (!/^0\d{10}$/.test(formData.telefono)) {
+            errors.telefono = 'Teléfono inválido. Use el formato 04121234567 (solo números)';
         }
 
         if (parseInt(formData.cantidad_dispensadores) <= 0) {
@@ -41,31 +65,38 @@ export default function EditarBombaModal({ show, onHide, bombaData }) {
 
     const handleSubmit = async (event) => {
         event.preventDefault();
-        const form = event.currentTarget;
-        
-        if (form.checkValidity() === false) {
-            event.stopPropagation();
-            setValidated(true);
-            return;
-        }
 
-        const errors = validateForm();
-        if (Object.keys(errors).length > 0) {
-            console.log('Errores de validación:', errors);
-            return;
-        }
+        // Combina los horarios antes de enviar
+        const dataToSend = {
+            ...formData,
+            horario_operacion: `${formData.horario_apertura} - ${formData.horario_cierre}`,
+            id_encargado_registro: 1 // ID fijo temporal
+        };
+        delete dataToSend.horario_apertura;
+        delete dataToSend.horario_cierre;
 
         try {
-            // Aca va la llamada de la API
-            console.log('Datos a actualizar:', formData);
+            const response = await fetch(`http://localhost:8000/api/estaciones/${bombaData.id}/`, {
+                method: 'PUT', // o 'PATCH' si solo quieres actualizar algunos campos
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataToSend)
+            });
 
-            onHide();
+            if (!response.ok) {
+                let errorMsg = 'Error al editar la bomba';
+                try {
+                    const errorData = await response.json();
+                    errorMsg = JSON.stringify(errorData);
+                } catch (e) {}
+                throw new Error(errorMsg);
+            }
 
             alert('Bomba actualizada exitosamente!');
-
+            onHide();
         } catch (error) {
-            console.error('Error al actualizar la bomba:', error);
-            alert('Error al actualizar la bomba. Por favor intente de nuevo.');
+            alert('Error al actualizar la bomba: ' + error.message);
         }
     };
 
@@ -84,11 +115,11 @@ export default function EditarBombaModal({ show, onHide, bombaData }) {
                             name="rif"
                             value={formData.rif}
                             onChange={handleChange}
-                            placeholder="J-12345678-9"
-                            pattern="^[JGVE]-\d{8}-\d$"
+                            placeholder="J123456789"
+                            pattern="^[JGVE]\d{9}$"
                         />
                         <Form.Control.Feedback type="invalid">
-                            Ingrese un RIF válido (formato: J-12345678-9)
+                            Ingrese un RIF válido (formato: J123456789)
                         </Form.Control.Feedback>
                     </Form.Group>
 
@@ -131,11 +162,11 @@ export default function EditarBombaModal({ show, onHide, bombaData }) {
                             name="telefono"
                             value={formData.telefono}
                             onChange={handleChange}
-                            placeholder="0XXX-1234567"
-                            pattern="^0[24][12]\d{2}-\d{7}$"
+                            placeholder="04121234567"
+                            pattern="^0\d{10}$"
                         />
                         <Form.Control.Feedback type="invalid">
-                            Ingrese un teléfono válido (formato: 0XXX-1234567)
+                            Ingrese un teléfono válido (formato: 04121234567)
                         </Form.Control.Feedback>
                     </Form.Group>
 

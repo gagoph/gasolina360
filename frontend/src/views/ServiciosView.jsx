@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import MainCard from '../components/MainCard';
 import AddServicio from '../components/AddServicio';
+import EditarServicio from '../components/EditarServicio';
+import EliminarServicio from '../components/EliminarServicio';
 import { Form } from 'react-bootstrap';
 
 export default function ServiciosView() {
     const [showAddServicioModal, setShowAddServicioModal] = useState(false);
     const [showEditServicioModal, setShowEditServicioModal] = useState(false);
+    const [showDeleteServicioModal, setShowDeleteServicioModal] = useState(false);
     const [selectedServicio, setSelectedServicio] = useState('');
+    const [selectedServicioEliminar, setSelectedServicioEliminar] = useState('');
+
 
     // Esto es temporal, luego vendrá de tu backend
     const serviciosDisponibles = [
@@ -21,6 +26,20 @@ export default function ServiciosView() {
             return;
         }
         setShowEditServicioModal(true);
+    };
+    const handleDeleteClick = () => {
+        if (!selectedServicioEliminar) {
+            alert('Por favor seleccione un servicio para eliminar');
+            return;
+        }
+        setShowDeleteServicioModal(true);
+    };
+
+    const handleConfirmDelete = () => {
+        // Aquí iría la lógica para eliminar el servicio
+        alert(`Servicio con ID ${selectedServicioEliminar} eliminado (simulado)`);
+        setShowDeleteServicioModal(false);
+        setSelectedServicioEliminar('');
     };
 
     return (
@@ -78,8 +97,49 @@ export default function ServiciosView() {
                         </Form.Select>
                     }
                 />
+                <EditarServicio 
+                    show={showEditServicioModal}
+                    onHide={() => setShowEditServicioModal(false)}
+                    servicioId={selectedServicio} 
+                />
             </div>
-            
+            <MainCard 
+                icon={<svg width="30px" height="30px" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 7h12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7h12z" stroke="white" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>}
+                title="Eliminar Servicio"
+                text="Eliminar un servicio existente de la estación"
+                buttonText="Eliminar"
+                buttonColor="#dc3545"
+                onButtonClick={handleDeleteClick}
+                customContent={
+                    <Form.Select
+                        value={selectedServicioEliminar}
+                        onChange={(e) => setSelectedServicioEliminar(e.target.value)}
+                        style={{
+                            backgroundColor: 'white',
+                            color: 'black',
+                            padding: '0.5rem',
+                            borderRadius: '0.375rem',
+                            border: '1px solid #dee2e6',
+                            width: '100%'
+                        }}
+                    >
+                        <option value="">Seleccione un servicio</option>
+                        {serviciosDisponibles.map(servicio => (
+                            <option key={servicio.id} value={servicio.id}>
+                                {servicio.nombre}
+                            </option>
+                        ))}
+                    </Form.Select>
+                }
+            />
+            <EliminarServicio 
+                show={showDeleteServicioModal}
+                onHide={() => setShowDeleteServicioModal(false)}
+                servicioId={selectedServicioEliminar}
+                onConfirm={handleConfirmDelete}
+            />
             
         </>
     );
