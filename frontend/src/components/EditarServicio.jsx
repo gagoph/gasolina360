@@ -1,115 +1,150 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form } from 'react-bootstrap';
 
-export default function EditarServicio({ show, onHide, servicioId }) {
-    // Simulación de datos de servicios (esto luego vendrá del backend)
-    const serviciosMock = [
-        {
-            id: 1,
-            nombre: 'Lavado de autos premium',
-            horario_apertura: '08:00',
-            horario_cierre: '18:00',
-            contacto: '555-1234'
-        },
-        {
-            id: 2,
-            nombre: 'Cambio de aceite rápido',
-            horario_apertura: '09:00',
-            horario_cierre: '17:00',
-            contacto: '555-5678'
-        },
-        {
-            id: 3,
-            nombre: 'Servicio de mecánica',
-            horario_apertura: '07:30',
-            horario_cierre: '19:00',
-            contacto: '555-9999'
-        }
-    ];
-
+export default function EditarServicio({ show, onHide, servicioId, estacionServicioId }) {
     const [formData, setFormData] = useState({
         nombre: '',
+        tipo_servicio: '',
+        descripcion: '',
         horario_apertura: '',
         horario_cierre: '',
-        contacto: ''
+        contacto: '',
+        activo: true
     });
+    const [tipos, setTipos] = useState([]);
+    const [validated, setValidated] = useState(false);
 
-    const [errors, setErrors] = useState({});
-
-    // Cargar datos del servicio seleccionado
     useEffect(() => {
-        if (show && servicioId) {
-            const servicio = serviciosMock.find(s => String(s.id) === String(servicioId));
-            if (servicio) {
-                setFormData({
-                    nombre: servicio.nombre,
-                    horario_apertura: servicio.horario_apertura,
-                    horario_cierre: servicio.horario_cierre,
-                    contacto: servicio.contacto
+        if (show && servicioId && estacionServicioId) {
+            // Cargar datos del servicio
+            fetch(`http://localhost:8000/api/servicios/${servicioId}/`)
+                .then(res => res.json())
+                .then(servicio => {
+                    setFormData(prev => ({
+                        ...prev,
+                        nombre: servicio.nombre || '',
+                        tipo_servicio: servicio.tipo_servicio || '',
+                        descripcion: servicio.descripcion || ''
+                    }));
                 });
-            }
+            // Cargar datos de la relación EstacionServicio
+            fetch(`http://localhost:8000/api/servicios/estacion-servicios/${estacionServicioId}/`)
+                .then(res => res.json())
+                .then(rel => {
+                    let horario_apertura = '';
+                    let horario_cierre = '';
+                    if (rel.horario) {
+                        const partes = rel.horario.split(' - ');
+                        horario_apertura = partes[0] || '';
+                        horario_cierre = partes[1] || '';
+                    }
+                    setFormData(prev => ({
+                        ...prev,
+                        horario_apertura,
+                        horario_cierre,
+                        contacto: rel.contacto || '',
+                        activo: rel.activo
+                    }));
+                });
         }
-    }, [show, servicioId]);
+    }, [show, servicioId, estacionServicioId]);
+
+    useEffect(() => {
+        fetch('http://localhost:8000/api/servicios/tipos-servicio/')
+            .then(res => res.json())
+            .then(data => setTipos(data));
+    }, []);
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        const { name, value, type, checked } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: value
+            [name]: type === "checkbox" ? checked : value
         }));
-
-        if (errors[name]) {
-            setErrors(prev => ({
-                ...prev,
-                [name]: ''
-            }));
-        }
     };
 
-    const validateForm = () => {
-        const newErrors = {};
-        if (!formData.nombre) newErrors.nombre = 'El nombre es requerido';
-        if (!formData.horario_apertura || !formData.horario_cierre) newErrors.horario = 'El horario es requerido';
-        if (!formData.contacto) newErrors.contacto = 'El contacto es requerido';
-        return newErrors;
-    };
+    const handleSubmit = async (event) => {
+        event.preventDefault();
+        setValidated(true);
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        const newErrors = validateForm();
-        if (Object.keys(newErrors).length > 0) {
-            setErrors(newErrors);
-            return;
-        }
-        // Aquí iría la lógica para actualizar el servicio
-        console.log('Servicio actualizado:', formData);
+        // 1. Actualizar Servicio
+        await fetch(`http://localhost:8000/api/servicios/${servicioId}/`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                nombre: formData.nombre,
+                tipo_servicio: Number(formData.tipo_servicio),
+                descripcion: formData.descripcion
+            })
+        });
+
+        // 2. Actualizar EstacionServicio
+        await fetch(`http://localhost:8000/api/servicios/estacion-servicios/${estacionServicioId}/`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                horario: `${formData.horario_apertura} - ${formData.horario_cierre}`,
+                contacto: formData.contacto,
+                activo: formData.activo
+            })
+        });
+
+        alert('Servicio actualizado exitosamente!');
         onHide();
     };
 
     return (
-        <Modal show={show} onHide={onHide} centered>
+        <Modal show={show} onHide={onHide} size="lg">
             <Modal.Header closeButton>
                 <Modal.Title>Editar Servicio</Modal.Title>
             </Modal.Header>
             <Modal.Body>
-                <Form onSubmit={handleSubmit}>
+                <Form noValidate validated={validated} onSubmit={handleSubmit}>
                     <Form.Group className="mb-3">
-                        <Form.Label>Nombre</Form.Label>
+                        <Form.Label>Nombre del Servicio</Form.Label>
                         <Form.Control
+                            required
                             type="text"
                             name="nombre"
                             value={formData.nombre}
                             onChange={handleChange}
-                            isInvalid={!!errors.nombre}
-                            placeholder="Ingrese el nombre del servicio"
+                            placeholder="Nombre del servicio"
                         />
                         <Form.Control.Feedback type="invalid">
-                            {errors.nombre}
+                            El nombre es requerido
                         </Form.Control.Feedback>
                     </Form.Group>
-
                     <Form.Group className="mb-3">
-                        <Form.Label>Horario de Operación</Form.Label>
+                        <Form.Label>Tipo de Servicio</Form.Label>
+                        <Form.Select
+                            required
+                            name="tipo_servicio"
+                            value={formData.tipo_servicio}
+                            onChange={handleChange}
+                        >
+                            <option value="">Seleccione un tipo de servicio</option>
+                            {tipos.map(tipo => (
+                                <option key={tipo.id} value={tipo.id}>
+                                    {tipo.nombre}
+                                </option>
+                            ))}
+                        </Form.Select>
+                        <Form.Control.Feedback type="invalid">
+                            Seleccione un tipo de servicio
+                        </Form.Control.Feedback>
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Descripción</Form.Label>
+                        <Form.Control
+                            as="textarea"
+                            name="descripcion"
+                            value={formData.descripcion}
+                            onChange={handleChange}
+                            placeholder="Descripción del servicio"
+                        />
+                    </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Label>Horario de Atención</Form.Label>
                         <div className="d-flex gap-2">
                             <Form.Control
                                 required
@@ -118,7 +153,6 @@ export default function EditarServicio({ show, onHide, servicioId }) {
                                 value={formData.horario_apertura}
                                 onChange={handleChange}
                                 placeholder="Apertura"
-                                isInvalid={!!errors.horario}
                             />
                             <Form.Control
                                 required
@@ -127,38 +161,45 @@ export default function EditarServicio({ show, onHide, servicioId }) {
                                 value={formData.horario_cierre}
                                 onChange={handleChange}
                                 placeholder="Cierre"
-                                isInvalid={!!errors.horario}
                             />
                         </div>
                         <Form.Control.Feedback type="invalid">
-                            {errors.horario}
+                            El horario es requerido
                         </Form.Control.Feedback>
                     </Form.Group>
-
                     <Form.Group className="mb-3">
                         <Form.Label>Contacto</Form.Label>
                         <Form.Control
+                            required
                             type="text"
                             name="contacto"
                             value={formData.contacto}
                             onChange={handleChange}
-                            isInvalid={!!errors.contacto}
-                            placeholder="Número de teléfono o correo electrónico"
+                            placeholder="Contacto"
                         />
                         <Form.Control.Feedback type="invalid">
-                            {errors.contacto}
+                            El contacto es requerido
                         </Form.Control.Feedback>
                     </Form.Group>
+                    <Form.Group className="mb-3">
+                        <Form.Check
+                            type="checkbox"
+                            label="Activo"
+                            name="activo"
+                            checked={formData.activo}
+                            onChange={handleChange}
+                        />
+                    </Form.Group>
+                    <div className="d-flex justify-content-end gap-2 mt-3">
+                        <Button variant="secondary" onClick={onHide}>
+                            Cancelar
+                        </Button>
+                        <Button type="submit" variant="primary">
+                            Guardar Cambios
+                        </Button>
+                    </div>
                 </Form>
             </Modal.Body>
-            <Modal.Footer>
-                <Button variant="secondary" onClick={onHide}>
-                    Cancelar
-                </Button>
-                <Button variant="primary" onClick={handleSubmit}>
-                    Guardar Cambios
-                </Button>
-            </Modal.Footer>
         </Modal>
     );
 }

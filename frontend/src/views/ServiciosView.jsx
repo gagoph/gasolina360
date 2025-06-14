@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MainCard from '../components/MainCard';
 import AddServicio from '../components/AddServicio';
 import EditarServicio from '../components/EditarServicio';
@@ -11,14 +11,19 @@ export default function ServiciosView() {
     const [showDeleteServicioModal, setShowDeleteServicioModal] = useState(false);
     const [selectedServicio, setSelectedServicio] = useState('');
     const [selectedServicioEliminar, setSelectedServicioEliminar] = useState('');
+    const [serviciosDisponibles, setServiciosDisponibles] = useState([]);
 
+    // Cargar servicios desde el backend
+    const fetchServicios = () => {
+        fetch('http://localhost:8000/api/servicios/')
+            .then(res => res.json())
+            .then(data => setServiciosDisponibles(data))
+            .catch(err => console.error(err));
+    };
 
-    // Esto es temporal, luego vendrá de tu backend
-    const serviciosDisponibles = [
-        { id: 1, nombre: 'Lavado de autos premium' },
-        { id: 2, nombre: 'Cambio de aceite rápido' },
-        { id: 3, nombre: 'Servicio de mecánica' }
-    ];
+    useEffect(() => {
+        fetchServicios();
+    }, []);
 
     const handleEditClick = () => {
         if (!selectedServicio) {
@@ -36,8 +41,7 @@ export default function ServiciosView() {
     };
 
     const handleConfirmDelete = () => {
-        // Aquí iría la lógica para eliminar el servicio
-        alert(`Servicio con ID ${selectedServicioEliminar} eliminado (simulado)`);
+        fetchServicios();
         setShowDeleteServicioModal(false);
         setSelectedServicioEliminar('');
     };
@@ -45,11 +49,10 @@ export default function ServiciosView() {
     return (
         <>
             <div className="d-flex justify-content-between align-items-center mb-4">
-                <h1>Estación de servicio "El Manantial"</h1>
+                <h1>Servicios</h1>
             </div>
                     
             <h4 style={{color: "gray"}}>Gestión de servicios</h4>
-
             <div className="d-flex flex-column">
                 <MainCard 
                     icon={<svg width="30px" height="30px" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
@@ -63,7 +66,7 @@ export default function ServiciosView() {
                 />
                 <AddServicio 
                     show={showAddServicioModal}
-                    onHide={() => setShowAddServicioModal(false)}
+                    onHide={() => { setShowAddServicioModal(false); fetchServicios(); }}
                 />
 
                 <MainCard 
@@ -99,7 +102,7 @@ export default function ServiciosView() {
                 />
                 <EditarServicio 
                     show={showEditServicioModal}
-                    onHide={() => setShowEditServicioModal(false)}
+                    onHide={() => { setShowEditServicioModal(false); fetchServicios(); }}
                     servicioId={selectedServicio} 
                 />
             </div>
@@ -139,8 +142,8 @@ export default function ServiciosView() {
                 onHide={() => setShowDeleteServicioModal(false)}
                 servicioId={selectedServicioEliminar}
                 onConfirm={handleConfirmDelete}
+                servicios={serviciosDisponibles}
             />
-            
         </>
     );
 }

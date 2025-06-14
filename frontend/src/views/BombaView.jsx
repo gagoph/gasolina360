@@ -3,16 +3,19 @@ import MainCard from "../components/MainCard";
 import CrearBomba from '../components/CrearBomba';
 import EditarBomba from '../components/EditarBomba';
 import DisponibilidadBomba from '../components/DisponibilidadBomba';
+import EliminarBomba from '../components/EliminarBomba';
 import { Form } from 'react-bootstrap';
 
 export default function BombaView() {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showDisponibilidadModal, setShowDisponibilidadModal] = useState(false);
+    const [showDeleteBombaModal, setShowDeleteBombaModal] = useState(false);
     const [bombas, setBombas] = useState([]);
     const [selectedBombaId, setSelectedBombaId] = useState('');
     const [selectedEditBombaId, setSelectedEditBombaId] = useState('');
     const [selectedDisponibilidadBombaId, setSelectedDisponibilidadBombaId] = useState('');
+    const [selectedBombaIdEliminar, setSelectedBombaIdEliminar] = useState('');
 
     useEffect(() => {
         fetch('http://localhost:8000/api/estaciones/')
@@ -29,6 +32,12 @@ export default function BombaView() {
         setShowEditModal(true);
     };
 
+    const fetchBombas = () => {
+        fetch('http://localhost:8000/api/estaciones/')
+            .then(res => res.json())
+            .then(data => setBombas(data));
+    };
+
     const selectedBomba = bombas.find(b => String(b.id) === String(selectedEditBombaId));
     const selectedDisponibilidadBomba = bombas.find(b => String(b.id) === String(selectedDisponibilidadBombaId));
 
@@ -36,24 +45,6 @@ export default function BombaView() {
         <>
             <div className='bomba-header'>
                 <h1>Estaciones de servicios</h1>
-                <svg 
-                    className="delete-icon" 
-                    width="30" 
-                    height="30" 
-                    viewBox="0 0 24 24" 
-                    fill="none" 
-                    stroke="red" 
-                    strokeWidth="2"
-                    style={{ cursor: 'pointer' }}
-                    onClick={() => {
-                        if(window.confirm('¿Estás seguro de que quieres eliminar esta bomba?')) {
-                            // Aca va la logica para eliminar
-                            console.log('Eliminando bomba...');
-                        }
-                    }}
-                >
-                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                </svg>
             </div>
             
             <h4 style={{color: "gray"}}>Gestión de bombas</h4>
@@ -156,6 +147,49 @@ export default function BombaView() {
                 show={showDisponibilidadModal}
                 onHide={() => setShowDisponibilidadModal(false)}
                 bombaData={selectedDisponibilidadBomba}
+            />
+            <MainCard 
+                icon={<svg width="30px" height="30px" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M6 7h12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v12a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V7h12z" stroke="white" fill="none" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>}
+                title="Eliminar Bomba"
+                text="Eliminar una estación de servicio"
+                buttonText="Eliminar"
+                buttonColor="#dc3545"
+                onButtonClick={() => {
+                    if (!selectedBombaIdEliminar) {
+                        alert('Por favor seleccione una estación para eliminar');
+                        return;
+                    }
+                    setShowDeleteBombaModal(true);
+                }}
+                customContent={
+                    <Form.Select
+                        value={selectedBombaIdEliminar}
+                        onChange={e => setSelectedBombaIdEliminar(e.target.value)}
+                        style={{
+                            backgroundColor: 'white',
+                            color: 'black',
+                            padding: '0.5rem',
+                            borderRadius: '0.375rem',
+                            border: '1px solid #dee2e6',
+                            width: '100%'
+                        }}
+                    >
+                        <option value="">Seleccione una estación</option>
+                        {bombas.map(bomba => (
+                            <option key={bomba.id} value={bomba.id}>
+                                {bomba.nombre}
+                            </option>
+                        ))}
+                    </Form.Select>
+                }
+            />
+            <EliminarBomba
+                show={showDeleteBombaModal}
+                onHide={() => setShowDeleteBombaModal(false)}
+                bombaId={selectedBombaIdEliminar}
+                onConfirm={fetchBombas}
             />
         </>
     );
