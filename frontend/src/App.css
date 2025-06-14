@@ -135,3 +135,37 @@
     transform: scale(1.1);
     transition: transform 0.2s;
 }
+
+/* TABLA */
+.tabla-bombas {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    padding: 1.5rem;
+    background: transparent !important;
+}
+
+.tabla-bombas table {
+    background: transparent !important;
+}
+
+.tabla-bombas thead {
+    background: #0F172A !important;
+    color: #fff !important;
+}
+
+.tabla-bombas tbody {
+    background: transparent !important;
+}
+
+.tabla-bombas tr {
+    background: transparent !important;
+}
+
+.tabla-bombas td {
+    background: transparent !important;
+}
+
+.tabla-bombas th {
+    background: #0F172A !important;
+    color: #fff !important;
+}
